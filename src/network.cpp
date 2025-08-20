@@ -19,7 +19,7 @@ bool Network::start() {
   wifiConnecting = true;
   
   // Set hostname first
-  WiFi.hostname(config.hostname());
+  WiFi.hostname(HOSTNAME);
   // Reduce startup surge current
   WiFi.setAutoConnect(false);
   WiFi.mode(WIFI_STA);
@@ -46,7 +46,7 @@ bool Network::start() {
   SERIAL_ECHO("IP address: "); SERIAL_ECHOLN(WiFi.localIP());
   SERIAL_ECHO("RSSI: "); SERIAL_ECHOLN(WiFi.RSSI());
   SERIAL_ECHO("Mode: "); SERIAL_ECHOLN(WiFi.getPhyMode());
-  SERIAL_ECHO("Access to SD at the Run prompt : \\\\"); SERIAL_ECHO(config.hostname());SERIAL_ECHOLN("\\DavWWWRoot");
+  SERIAL_ECHO("Asscess to SD at the Run prompt : \\\\"); SERIAL_ECHO(WiFi.localIP());SERIAL_ECHOLN("\\DavWWWRoot");
 
   wifiConnected = true;
 

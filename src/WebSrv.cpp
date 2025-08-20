@@ -1,4 +1,5 @@
 #include "ESPWebDAV.h"
+#include <SdFat.h>
 
 // Sections are copied from ESP8266Webserver
 
@@ -60,10 +61,6 @@ String ESPWebDAV::urlDecode(const String& text)	{
 	return decoded;
 }
 
-
-
-
-
 // ------------------------
 String ESPWebDAV::urlToUri(String url)	{
 // ------------------------
@@ -75,16 +72,11 @@ String ESPWebDAV::urlToUri(String url)	{
 		return url;
 }
 
-
-
 // ------------------------
 bool ESPWebDAV::isClientWaiting() {
 // ------------------------
 	return server->hasClient();
 }
-
-
-
 
 // ------------------------
 void ESPWebDAV::handleClient(String blank) {
@@ -92,15 +84,11 @@ void ESPWebDAV::handleClient(String blank) {
 	processClient(&ESPWebDAV::handleRequest, blank);
 }
 
-
-
 // ------------------------
 void ESPWebDAV::rejectClient(String rejectMessage) {
 // ------------------------
 	processClient(&ESPWebDAV::handleReject, rejectMessage);
 }
-
-
 
 // ------------------------
 void ESPWebDAV::processClient(THandlerFunction handler, String message) {
@@ -118,11 +106,9 @@ void ESPWebDAV::processClient(THandlerFunction handler, String message) {
 	_chunked = false;
 	_responseHeaders = String();
 	_contentLength = CONTENT_LENGTH_NOT_SET;
-  	_contentRangeStart = _contentRangeEnd = CONTENT_RANGE_NOT_SET;
 	method = String();
 	uri = String();
 	contentLengthHeader = String();
-  	contentRangeHeader = String();
 	depthHeader = String();
 	hostHeader = String();
 	destinationHeader = String();
@@ -142,10 +128,6 @@ void ESPWebDAV::processClient(THandlerFunction handler, String message) {
 	client.stop();
 }
 
-
-
-
-
 // ------------------------
 bool ESPWebDAV::parseRequest() {
 // ------------------------
@@ -163,7 +145,7 @@ bool ESPWebDAV::parseRequest() {
 
 	method = req.substring(0, addr_start);
 	uri = urlDecode(req.substring(addr_start + 1, addr_end));
-	// DBG_PRINT("method: "); DBG_PRINT(method); DBG_PRINT(" url: "); DBG_PRINTLN(uri);
+	DBG_PRINT("method: "); DBG_PRINT(method); DBG_PRINT(" url: "); DBG_PRINTLN(uri);
 	
 	// parse and finish all headers
 	String headerName;
@@ -182,7 +164,7 @@ bool ESPWebDAV::parseRequest() {
 		
 		headerName = req.substring(0, headerDiv);
 		headerValue = req.substring(headerDiv + 2);
-		// DBG_PRINT("\t"); DBG_PRINT(headerName); DBG_PRINT(": "); DBG_PRINTLN(headerValue);
+		DBG_PRINT("\t"); DBG_PRINT(headerName); DBG_PRINT(": "); DBG_PRINTLN(headerValue);
 		
 		if(headerName.equalsIgnoreCase("Host"))
 			hostHeader = headerValue;
@@ -192,34 +174,10 @@ bool ESPWebDAV::parseRequest() {
 			contentLengthHeader = headerValue;
 		else if(headerName.equalsIgnoreCase("Destination"))
 			destinationHeader = headerValue;
-		else if (headerName.equalsIgnoreCase("Content-Range") || headerName.equalsIgnoreCase("Range"))
-		{
-			contentRangeHeader = headerValue;
-			_contentRangeStart = _contentRangeEnd = 0;
-			bool bDashReached=false;
-			for (int i=0; i<headerValue.length(); i++)
-			{
-				if (headerValue.c_str()[i]=='-')
-				{
-  				bDashReached=true;
-				  continue;
-				}
-				if (headerValue.c_str()[i]>='0' && headerValue.c_str()[i]<='9')
-				{
-  				if (!bDashReached)
-  					_contentRangeStart=_contentRangeStart*10+(headerValue[i]-'0');
-  				else
-  					_contentRangeEnd=_contentRangeEnd*10+(headerValue[i]-'0');
-				}
-			}   
-		}
 	}
 	
 	return true;
 }
-
-
-
 
 // ------------------------
 void ESPWebDAV::sendHeader(const String& name, const String& value, bool first) {
@@ -232,8 +190,6 @@ void ESPWebDAV::sendHeader(const String& name, const String& value, bool first) 
 		_responseHeaders += headerLine;
 }
 
-
-
 // ------------------------
 void ESPWebDAV::send(String code, const char* content_type, const String& content) {
 // ------------------------
@@ -244,8 +200,6 @@ void ESPWebDAV::send(String code, const char* content_type, const String& conten
 	if(content.length())
 		sendContent(content);
 }
-
-
 
 // ------------------------
 void ESPWebDAV::_prepareHeader(String& response, String code, const char* content_type, size_t contentLength) {
@@ -261,7 +215,7 @@ void ESPWebDAV::_prepareHeader(String& response, String code, const char* conten
 		sendHeader("Content-Length", String(_contentLength));
 	else if(_contentLength == CONTENT_LENGTH_UNKNOWN) {
 		_chunked = true;
-		sendHeader("Accept-Ranges","bytes");
+		sendHeader("Accept-Ranges","none");
 		sendHeader("Transfer-Encoding","chunked");
 	}
 	sendHeader("Connection", "close");
@@ -269,8 +223,6 @@ void ESPWebDAV::_prepareHeader(String& response, String code, const char* conten
 	response += _responseHeaders;
 	response += "\r\n";
 }
-
-
 
 // ------------------------
 void ESPWebDAV::sendContent(const String& content) {
@@ -297,8 +249,6 @@ void ESPWebDAV::sendContent(const String& content) {
 	}
 }
 
-
-
 // ------------------------
 void ESPWebDAV::sendContent_P(PGM_P content) {
 // ------------------------
@@ -324,14 +274,11 @@ void ESPWebDAV::sendContent_P(PGM_P content) {
 	}
 }
 
-
-
 // ------------------------
 void ESPWebDAV::setContentLength(size_t len)	{
 // ------------------------
 	_contentLength = len;
 }
-
 
 // ------------------------
 size_t ESPWebDAV::readBytesWithTimeout(uint8_t *buf, size_t bufSize) {
@@ -347,7 +294,6 @@ size_t ESPWebDAV::readBytesWithTimeout(uint8_t *buf, size_t bufSize) {
 	return client.read(buf, bufSize);
 }
 
-
 // ------------------------
 size_t ESPWebDAV::readBytesWithTimeout(uint8_t *buf, size_t bufSize, size_t numToRead) {
 // ------------------------
@@ -361,4 +307,176 @@ size_t ESPWebDAV::readBytesWithTimeout(uint8_t *buf, size_t bufSize, size_t numT
 		return 0;
 
 	return client.read(buf, bufSize);
+}
+
+// ------------------------
+// Try to add HTTP file list and upload/download
+// ------------------------
+
+// ------------------------
+void ESPWebDAV::handleFileList() {
+// ------------------------
+
+    SdFile root;
+    if (!root.open("/", O_READ)) {
+        send("500", "text/plain", "Cannot open root");
+        return;
+    }
+
+    SdFile child;
+    char fname[256];
+    uint32_t fileSize;
+    dir_t dir;
+    tm tmStr;
+    time_t t2t;
+    tm *gTm;
+    char buf[20];
+
+    String html = "<!DOCTYPE html><html><head>";
+    html += "<meta charset='utf-8'><title>SD Card Files</title>";
+    html += "<style>";
+    html += "table { border-collapse: collapse; width: 100%; }";
+    html += "th, td { border: 1px solid #ccc; padding: 8px; text-align: left; cursor: pointer; }";
+    html += "th { background-color: #eee; }";
+    html += "</style>";
+    html += "<script>"
+            "function sortTable(n) {"
+            "  var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;"
+            "  table = document.getElementById('fileTable');"
+            "  switching = true;"
+            "  dir = 'asc';"
+            "  while (switching) {"
+            "    switching = false;"
+            "    rows = table.rows;"
+            "    for (i = 1; i < (rows.length - 1); i++) {"
+            "      shouldSwitch = false;"
+            "      x = rows[i].getElementsByTagName('TD')[n];"
+            "      y = rows[i + 1].getElementsByTagName('TD')[n];"
+            "      var xContent = x.innerHTML.toLowerCase();"
+            "      var yContent = y.innerHTML.toLowerCase();"
+            "      if (n == 1) { xContent = parseInt(xContent); yContent = parseInt(yContent); }"
+            "      if (dir == 'asc') { if (xContent > yContent) { shouldSwitch = true; break; } }"
+            "      else { if (xContent < yContent) { shouldSwitch = true; break; } }"
+            "    }"
+            "    if (shouldSwitch) {"
+            "      rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);"
+            "      switching = true; switchcount++;"
+            "    } else {"
+            "      if (switchcount == 0 && dir == 'asc') { dir = 'desc'; switching = true; }"
+            "    }"
+            "  }"
+            "}"
+            "</script>";
+    html += "</head><body>";
+    html += "<h1>Files on SD Card</h1>";
+    html += "<table id='fileTable'><tr>";
+    html += "<th onclick='sortTable(0)'>Filename</th>";
+    html += "<th onclick='sortTable(1)'>Size (bytes)</th>";
+    html += "<th onclick='sortTable(2)'>Last Modified</th></tr>";
+
+    while (child.openNext(&root, O_READ)) {
+        child.getName(fname, sizeof(fname));
+
+        if (!child.isDir()) {
+            fileSize = child.fileSize();
+
+            // Get last modified timestamp using WebDAV method
+            child.dirEntry(&dir);
+
+            tmStr.tm_hour = FAT_HOUR(dir.lastWriteTime);
+            tmStr.tm_min = FAT_MINUTE(dir.lastWriteTime);
+            tmStr.tm_sec = FAT_SECOND(dir.lastWriteTime);
+            tmStr.tm_year = FAT_YEAR(dir.lastWriteDate) - 1900;
+            tmStr.tm_mon = FAT_MONTH(dir.lastWriteDate) - 1;
+            tmStr.tm_mday = FAT_DAY(dir.lastWriteDate);
+
+            t2t = mktime(&tmStr);
+            gTm = gmtime(&t2t);
+            strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", gTm);
+
+            html += "<tr>";
+            html += "<td><a href='/download?name=" + String(fname) + "'>" + String(fname) + "</a></td>";
+            html += "<td>" + String(fileSize) + "</td>";
+            html += "<td>" + String(buf) + "</td>";
+            html += "</tr>";
+        }
+        child.close();
+    }
+
+    root.close();
+
+    html += "</table></body></html>";
+    send("200", "text/html", html);
+
+}
+
+void ESPWebDAV::handleFileDownload() {
+    // Extract filename from URL: /download?name=filename.txt
+    int idx = uri.indexOf("?name=");
+    if (idx == -1) {
+        send("400", "text/plain", "No filename specified");
+        return;
+    }
+
+    String filename = urlDecode(uri.substring(idx + 6));
+
+    SdFile root;
+    if (!root.open("/", O_READ)) {
+        send("500", "text/plain", "Cannot open root directory");
+        return;
+    }
+
+    SdFile file;
+    if (!file.open(&root, filename.c_str(), O_READ)) {
+        send("404", "text/plain", "File not found");
+        root.close();
+        return;
+    }
+
+    // Send HTTP headers for download
+    String header = "HTTP/1.1 200 OK\r\n";
+    header += "Content-Type: application/octet-stream\r\n";
+    header += "Content-Length: " + String(file.fileSize()) + "\r\n";
+    header += "Content-Disposition: attachment; filename=\"" + filename + "\"\r\n";
+    header += "Connection: close\r\n\r\n";
+    client.write(header.c_str(), header.length());
+
+    // Stream file in 256-byte chunks
+    uint8_t buf[256];
+    int n;
+    while ((n = file.read(buf, sizeof(buf))) > 0) {
+        client.write(buf, n);
+    }
+
+    file.close();
+    root.close();
+}
+
+void ESPWebDAV::handleStatusPage() {
+    String html = "<!DOCTYPE html><html><head><meta charset='utf-8'>";
+    html += "<title>ESP8266 Status</title>";
+    html += "<style>body{font-family:Arial; margin:20px;} table{border-collapse:collapse;} td,th{border:1px solid #ccc; padding:6px 10px;}</style>";
+    html += "</head><body>";
+    html += "<h2>ESP8266 Status</h2>";
+    html += "<table>";
+
+    html += "<tr><th>WiFi SSID</th><td>" + WiFi.SSID() + "</td></tr>";
+    html += "<tr><th>IP Address</th><td>" + WiFi.localIP().toString() + "</td></tr>";
+    html += "<tr><td>MAC Address</td><td>" + WiFi.macAddress() + "</td></tr>";
+    html += "<tr><th>Signal Strength (RSSI)</th><td>" + String(WiFi.RSSI()) + " dBm</td></tr>";
+    int ch = WiFi.channel();
+    int freq = 2407 + ch * 5;
+    html += "<tr><td>WiFi Channel</td><td>" + String(ch) + "</td></tr>";
+    html += "<tr><td>WiFi Frequency</td><td>" + String(freq) + " MHz</td></tr>";
+    html += "<tr><th>Free Heap</th><td>" + String(ESP.getFreeHeap()) + " bytes</td></tr>";
+
+    // uptime in seconds
+    unsigned long uptime = millis() / 1000;
+    html += "<tr><th>Uptime</th><td>" + String(uptime) + " sec</td></tr>";
+
+    html += "</table>";
+    html += "<p><a href='/files'>Browse Files</a></p>";
+    html += "</body></html>";
+
+    send("200", "text/html", html);
 }

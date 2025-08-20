@@ -14,7 +14,6 @@
 // constants for WebServer
 #define CONTENT_LENGTH_UNKNOWN ((size_t) -1)
 #define CONTENT_LENGTH_NOT_SET ((size_t) -2)
-#define CONTENT_RANGE_NOT_SET ((size_t) -1)
 #define HTTP_MAX_POST_WAIT 		5000 
 
 enum ResourceType { RESOURCE_NONE, RESOURCE_FILE, RESOURCE_DIR };
@@ -29,22 +28,27 @@ public:
 	bool isClientWaiting();
 	void handleClient(String blank = "");
 	void rejectClient(String rejectMessage);
+	// http methods
+    void handleFileList();
+    void handleFileDownload();
+    void handleStatusPage();
 
-protected:
+  protected:
 	typedef void (ESPWebDAV::*THandlerFunction)(String);
-
+	
 	void processClient(THandlerFunction handler, String message);
 	void handleNotFound();
 	void handleReject(String rejectMessage);
 	void handleRequest(String blank);
-	void handleOptions(ResourceType resource);
-	void handleLock(ResourceType resource);
+    void handleWEBDAV(String blank);
+    void handleOptions(ResourceType resource);
+    void handleLock(ResourceType resource);
 	void handleUnlock(ResourceType resource);
 	void handlePropPatch(ResourceType resource);
 	void handleProp(ResourceType resource);
 	void sendPropResponse(boolean recursing, FatFile *curFile);
 	void handleGet(ResourceType resource, bool isGet);
-  void handlePut(ResourceType resource);
+	void handlePut(ResourceType resource);
 	void handleWriteError(String message, FatFile *wFile);
 	void handleDirectoryCreate(ResourceType resource);
 	void handleMove(ResourceType resource);
@@ -63,8 +67,8 @@ protected:
 	void setContentLength(size_t len);
 	size_t readBytesWithTimeout(uint8_t *buf, size_t bufSize);
 	size_t readBytesWithTimeout(uint8_t *buf, size_t bufSize, size_t numToRead);
-
-
+	
+	
 	// variables pertaining to current most HTTP request being serviced
 	WiFiServer *server;
 	SdFat sd;
@@ -73,14 +77,13 @@ protected:
 	String 		method;
 	String 		uri;
 	String 		contentLengthHeader;
-  String    contentRangeHeader;
 	String 		depthHeader;
 	String 		hostHeader;
 	String		destinationHeader;
 
 	String 		_responseHeaders;
 	bool		_chunked;
-	int			_contentLength, _contentRangeStart, _contentRangeEnd;
+	int			_contentLength;
 };
 
 extern ESPWebDAV dav;
